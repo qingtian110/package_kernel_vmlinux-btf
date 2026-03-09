@@ -75,6 +75,7 @@ define Build/Compile
 		--disable DEBUG_INFO_NONE \
 		--disable DEBUG_INFO_REDUCED \
 		--disable DEBUG_INFO_SPLIT \
+		--disable WERROR \
 		--enable BPF \
 		--enable BPF_EVENTS \
 		--enable BPF_JIT \
