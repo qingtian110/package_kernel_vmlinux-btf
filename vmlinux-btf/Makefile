@@ -63,7 +63,7 @@ define Build/Prepare
 		$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p); \
 	)
 	[ -d "$(GENERIC_HACK_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_HACK_DIR)/*.patch), \
-		{ [ -n "$$SKIP_GENERIC_PLATFORM_FILES_PATCHES" ] && grep -Eq "drivers/net/phy/b53/Kconfig|drivers/net/phy/rtl8261n/Kconfig|fallback-sprom" $(p) && echo "Skipping $(p)"; } || \
+		{ [ -n "$$SKIP_GENERIC_PLATFORM_FILES_PATCHES" ] && grep -Eq "drivers/net/phy/b53/Kconfig|drivers/net/phy/rtl8261n/Kconfig|fallback-sprom|mtk_bmt|routerbootpart|myloader" $(p) && echo "Skipping $(p)"; } || \
 		$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p); \
 	)
 endef
