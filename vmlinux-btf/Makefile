@@ -55,11 +55,17 @@ endef
 define Build/Prepare
 	$(call Build/Prepare/Default)
 
-	[ -d "$(GENERIC_BACKPORT_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_BACKPORT_DIR)/*.patch),$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p);)
-	[ -d "$(GENERIC_PATCH_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_PATCH_DIR)/*.patch),$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p);)
-	[ -d "$(GENERIC_HACK_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_HACK_DIR)/*.patch),$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p);)
+	$(foreach dir,$(GENERIC_FILES_DIR),[ -d $(dir) ] && $(CP) $(dir)/* $(PKG_BUILD_DIR)/ || SKIP_GENERIC_PLATFORM_FILES_PATCHES=1;)
 
-	$(foreach dir,$(GENERIC_FILES_DIR),[ -d $(dir) ] && $(CP) $(dir)/* $(PKG_BUILD_DIR)/;)
+	[ -d "$(GENERIC_BACKPORT_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_BACKPORT_DIR)/*.patch),$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p);)
+	[ -d "$(GENERIC_PATCH_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_PATCH_DIR)/*.patch), \
+		{ [ -n "$$SKIP_GENERIC_PLATFORM_FILES_PATCHES" ] && grep -Eq "drivers/mtd/Kconfig|drivers/platform/mikrotik/Kconfig" $(p) && echo "Skipping $(p)"; } || \
+		$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p); \
+	)
+	[ -d "$(GENERIC_HACK_DIR)" ] && $(foreach p,$(wildcard $(GENERIC_HACK_DIR)/*.patch), \
+		{ [ -n "$$SKIP_GENERIC_PLATFORM_FILES_PATCHES" ] && grep -Eq "drivers/net/phy/b53/Kconfig|drivers/net/phy/rtl8261n/Kconfig" $(p) && echo "Skipping $(p)"; } || \
+		$(PATCH) -p1 -d $(PKG_BUILD_DIR) < $(p); \
+	)
 endef
 
 define Build/Compile
@@ -67,16 +73,48 @@ define Build/Compile
 
 	$(PKG_BUILD_DIR)/scripts/config --file $(PKG_BUILD_DIR)/.config \
 		--disable DEBUG_INFO_NONE \
-		--disable DEBUG_INFO_SPLIT \
 		--disable DEBUG_INFO_REDUCED \
+		--disable DEBUG_INFO_SPLIT \
+		--enable BPF \
 		--enable BPF_EVENTS \
+		--enable BPF_JIT \
 		--enable BPF_JIT_ALWAYS_ON \
+		--enable BPF_PRELOAD \
+		--enable BPF_STREAM_PARSER \
+		--enable BPF_SYSCALL \
+		--enable CONFIG_CGROUP_BPF \
+		--enable CONFIG_CGROUP_NET_CLASSID \
+		--enable CONFIG_CGROUP_NET_PRIO \
+		--enable CONFIG_NET_NS \
 		--enable DEBUG_INFO_BTF \
+		--enable FTRACE \
+		--enable KPROBE_EVENTS \
+		--enable KPROBES \
+		--enable KRETPROBES \
 		--enable MODULE_ALLOW_BTF_MISMATCH \
+		--enable NET_ACT_BPF \
+		--enable NET_ACT_GACT \
+		--enable NET_ACT_MIRRED \
+		--enable NET_ACT_POLICE \
+		--enable NET_CLS \
+		--enable NET_CLS_BPF \
+		--enable NET_CLS_FLOWER \
+		--enable NET_CLS_U32 \
+		--enable NET_SCH_CAKE \
+		--enable NET_SCH_FIFO \
+		--enable NET_SCH_FQ \
+		--enable NET_SCH_FQ_CODEL \
+		--enable NET_SCH_HTB \
+		--enable NET_SCH_TBF \
+		--enable NET_SCHED \
 		--enable PAHOLE_HAS_LANG_EXCLUDE \
 		--enable PAHOLE_HAS_SPLIT_BTF \
+		--enable PERF_EVENTS \
+		--enable UPROBE_EVENTS \
+		--enable UPROBES \
 		--enable XDP_SOCKETS \
-		--enable XDP_SOCKETS_DIAG
+		--enable XDP_SOCKETS_DIAG \
+		--set-str INITRAMFS_SOURCE ""
 
 	+$(MAKE) -C $(PKG_BUILD_DIR) $(PKG_JOBS) $(KERNEL_MAKE_FLAGS) olddefconfig
 	+$(MAKE) -C $(PKG_BUILD_DIR) $(PKG_JOBS) $(KERNEL_MAKE_FLAGS) vmlinux
